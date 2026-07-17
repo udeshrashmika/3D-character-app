@@ -27,7 +27,7 @@ class CharacterApp extends StatelessWidget {
 
 class CharacterAction {
   final String label;
-  final String animationName; 
+  final String animationName;
   final IconData icon;
 
   const CharacterAction({
@@ -47,39 +47,39 @@ class CharacterHomePage extends StatefulWidget {
 class _CharacterHomePageState extends State<CharacterHomePage> {
   final Flutter3DController controller = Flutter3DController();
 
-  static const String modelPath = 'assets/models/character.glb';
-  static const Color accent = Color(0xFF2D2D2D); 
+  static const String modelPath = 'assets/models/mini_character.glb';
+  static const Color accent = Color(0xFF2D2D2D);
 
   static const CharacterAction idleAction = CharacterAction(
     label: 'Idle',
-    animationName: '',
+    animationName: 'Idle',
     icon: Icons.accessibility_new_rounded,
   );
 
   final List<CharacterAction> actions = const [
     CharacterAction(
-      label: 'Jog',
-      animationName: 'Jog',
+      label: 'Walk',
+      animationName: 'Walk',
+      icon: Icons.directions_walk_rounded,
+    ),
+    CharacterAction(
+      label: 'Run',
+      animationName: 'Run',
       icon: Icons.directions_run_rounded,
     ),
     CharacterAction(
-      label: 'Box',
-      animationName: 'Box',
-      icon: Icons.sports_mma_rounded,
+      label: 'Jump',
+      animationName: 'Jump',
+      icon: Icons.arrow_upward_rounded,
     ),
     CharacterAction(
-      label: 'Sit-ups',
-      animationName: 'Sit',
-      icon: Icons.fitness_center_rounded,
-    ),
-    CharacterAction(
-      label: 'Dance',
-      animationName: 'Dance',
-      icon: Icons.music_note_rounded,
+      label: 'Loose',
+      animationName: 'Loose',
+      icon: Icons.celebration_rounded,
     ),
   ];
 
-  int? selectedIndex; 
+  int? selectedIndex;
   bool isLoading = true;
   double cardScale = 1.0;
 
@@ -89,23 +89,32 @@ class _CharacterHomePageState extends State<CharacterHomePage> {
     if (mounted) setState(() => cardScale = 1.0);
   }
 
+  void _frameCamera() {
+    controller.resetCameraOrbit();
+    controller.resetCameraTarget();
+  }
+
   void selectAction(int index) {
     if (index == selectedIndex) return;
     setState(() => selectedIndex = index);
     controller.playAnimation(animationName: actions[index].animationName);
+    _frameCamera();
     _pulse();
   }
 
   void goIdle() {
     if (selectedIndex == null) return;
     setState(() => selectedIndex = null);
-    controller.stopAnimation();
+    controller.playAnimation(animationName: idleAction.animationName);
+    _frameCamera();
     _pulse();
   }
 
   @override
   Widget build(BuildContext context) {
-    final current = selectedIndex == null ? idleAction : actions[selectedIndex!];
+    final current = selectedIndex == null
+        ? idleAction
+        : actions[selectedIndex!];
 
     return Scaffold(
       body: SafeArea(
@@ -129,7 +138,9 @@ class _CharacterHomePageState extends State<CharacterHomePage> {
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -186,6 +197,10 @@ class _CharacterHomePageState extends State<CharacterHomePage> {
                             onLoad: (_) {
                               if (mounted) {
                                 setState(() => isLoading = false);
+                                controller.playAnimation(
+                                  animationName: idleAction.animationName,
+                                );
+                                _frameCamera();
                               }
                             },
                             onError: (error) {
@@ -270,10 +285,7 @@ class _CharacterHomePageState extends State<CharacterHomePage> {
   }) {
     return Expanded(
       child: Padding(
-        padding: EdgeInsets.only(
-          left: isFirst ? 0 : 5,
-          right: isLast ? 0 : 5,
-        ),
+        padding: EdgeInsets.only(left: isFirst ? 0 : 5, right: isLast ? 0 : 5),
         child: GestureDetector(
           onTap: onTap,
           child: AnimatedContainer(
