@@ -15,9 +15,10 @@ class CharacterApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF6C5CE7),
-        brightness: Brightness.dark,
+        colorSchemeSeed: const Color(0xFF2D2D2D),
+        brightness: Brightness.light,
         fontFamily: 'Roboto',
+        scaffoldBackgroundColor: const Color(0xFFF5F5F3),
       ),
       home: const CharacterHomePage(),
     );
@@ -26,15 +27,13 @@ class CharacterApp extends StatelessWidget {
 
 class CharacterAction {
   final String label;
-  final String assetPath;
+  final String animationName; 
   final IconData icon;
-  final Color color;
 
   const CharacterAction({
     required this.label,
-    required this.assetPath,
+    required this.animationName,
     required this.icon,
-    required this.color,
   });
 }
 
@@ -48,137 +47,131 @@ class CharacterHomePage extends StatefulWidget {
 class _CharacterHomePageState extends State<CharacterHomePage> {
   final Flutter3DController controller = Flutter3DController();
 
+  static const String modelPath = 'assets/models/character.glb';
+  static const Color accent = Color(0xFF2D2D2D); 
+
+  static const CharacterAction idleAction = CharacterAction(
+    label: 'Idle',
+    animationName: '',
+    icon: Icons.accessibility_new_rounded,
+  );
+
   final List<CharacterAction> actions = const [
     CharacterAction(
       label: 'Jog',
-      assetPath: 'assets/models/Jogging.glb',
+      animationName: 'Jog',
       icon: Icons.directions_run_rounded,
-      color: Color(0xFF00B894),
     ),
     CharacterAction(
       label: 'Box',
-      assetPath: 'assets/models/Boxing.glb',
+      animationName: 'Box',
       icon: Icons.sports_mma_rounded,
-      color: Color(0xFFE17055),
     ),
     CharacterAction(
       label: 'Sit-ups',
-      assetPath: 'assets/models/Situps.glb',
+      animationName: 'Sit',
       icon: Icons.fitness_center_rounded,
-      color: Color(0xFF0984E3),
     ),
     CharacterAction(
       label: 'Dance',
-      assetPath: 'assets/models/dance.glb',
+      animationName: 'Dance',
       icon: Icons.music_note_rounded,
-      color: Color(0xFFE84393),
     ),
   ];
 
-  int selectedIndex = 0;
+  int? selectedIndex; 
   bool isLoading = true;
+  double cardScale = 1.0;
 
-  String get currentAsset => actions[selectedIndex].assetPath;
+  void _pulse() async {
+    setState(() => cardScale = 0.98);
+    await Future.delayed(const Duration(milliseconds: 120));
+    if (mounted) setState(() => cardScale = 1.0);
+  }
 
   void selectAction(int index) {
     if (index == selectedIndex) return;
-    setState(() {
-      selectedIndex = index;
-      isLoading = true;
-    });
+    setState(() => selectedIndex = index);
+    controller.playAnimation(animationName: actions[index].animationName);
+    _pulse();
+  }
+
+  void goIdle() {
+    if (selectedIndex == null) return;
+    setState(() => selectedIndex = null);
+    controller.stopAnimation();
+    _pulse();
   }
 
   @override
   Widget build(BuildContext context) {
-    final current = actions[selectedIndex];
+    final current = selectedIndex == null ? idleAction : actions[selectedIndex!];
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1A1A2E), Color(0xFF16213E), Color(0xFF0F1128)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Character',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFE0E0DE)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        Icon(current.icon, size: 14, color: accent),
+                        const SizedBox(width: 6),
                         Text(
-                          'My Character',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                          current.label,
+                          style: const TextStyle(
+                            color: accent,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
                           ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Tap an action below',
-                          style: TextStyle(fontSize: 14, color: Colors.white54),
                         ),
                       ],
                     ),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: current.color.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: current.color.withOpacity(0.5),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(current.icon, size: 16, color: current.color),
-                          const SizedBox(width: 6),
-                          Text(
-                            current.label,
-                            style: TextStyle(
-                              color: current.color,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
 
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: AnimatedScale(
+                  scale: cardScale,
+                  duration: const Duration(milliseconds: 120),
+                  curve: Curves.easeOut,
                   child: Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withOpacity(0.06),
-                          Colors.white.withOpacity(0.02),
-                        ],
-                      ),
-                      border: Border.all(color: Colors.white.withOpacity(0.08)),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFE8E8E6)),
                       boxShadow: [
                         BoxShadow(
-                          color: current.color.withOpacity(0.15),
-                          blurRadius: 40,
-                          spreadRadius: 4,
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
@@ -187,15 +180,12 @@ class _CharacterHomePageState extends State<CharacterHomePage> {
                       children: [
                         Positioned.fill(
                           child: Flutter3DViewer(
-                            key: ValueKey(currentAsset),
-                            src: currentAsset,
+                            src: modelPath,
                             controller: controller,
-                            progressBarColor: current.color,
+                            progressBarColor: accent,
                             onLoad: (_) {
                               if (mounted) {
                                 setState(() => isLoading = false);
-
-                                controller.playAnimation();
                               }
                             },
                             onError: (error) {
@@ -209,19 +199,20 @@ class _CharacterHomePageState extends State<CharacterHomePage> {
                         if (isLoading)
                           Positioned.fill(
                             child: Container(
-                              color: const Color(0xFF16213E).withOpacity(0.85),
-                              child: Center(
+                              color: Colors.white,
+                              child: const Center(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     CircularProgressIndicator(
-                                      color: current.color,
+                                      color: accent,
+                                      strokeWidth: 2,
                                     ),
-                                    const SizedBox(height: 14),
+                                    SizedBox(height: 14),
                                     Text(
-                                      'Loading ${current.label}...',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
+                                      'Loading character...',
+                                      style: TextStyle(
+                                        color: Color(0xFF9A9A98),
                                         fontSize: 13,
                                       ),
                                     ),
@@ -235,78 +226,88 @@ class _CharacterHomePageState extends State<CharacterHomePage> {
                   ),
                 ),
               ),
+            ),
 
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: Row(
-                  children: List.generate(actions.length, (index) {
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Row(
+                children: [
+                  _buildButton(
+                    label: idleAction.label,
+                    icon: idleAction.icon,
+                    isSelected: selectedIndex == null,
+                    isFirst: true,
+                    isLast: false,
+                    onTap: goIdle,
+                  ),
+                  ...List.generate(actions.length, (index) {
                     final action = actions[index];
-                    final isSelected = index == selectedIndex;
-                    return Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          left: index == 0 ? 0 : 6,
-                          right: index == actions.length - 1 ? 0 : 6,
-                        ),
-                        child: GestureDetector(
-                          onTap: () => selectAction(index),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOut,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? action.color
-                                  : Colors.white.withOpacity(0.06),
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: isSelected
-                                    ? action.color
-                                    : Colors.white.withOpacity(0.1),
-                              ),
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: action.color.withOpacity(0.4),
-                                        blurRadius: 16,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ]
-                                  : [],
-                            ),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  action.icon,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors.white60,
-                                  size: 22,
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  action.label,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : Colors.white60,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                    return _buildButton(
+                      label: action.label,
+                      icon: action.icon,
+                      isSelected: index == selectedIndex,
+                      isFirst: false,
+                      isLast: index == actions.length - 1,
+                      onTap: () => selectAction(index),
                     );
                   }),
-                ),
+                ],
               ),
-            ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required bool isFirst,
+    required bool isLast,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: isFirst ? 0 : 5,
+          right: isLast ? 0 : 5,
+        ),
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? accent : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected ? accent : const Color(0xFFE0E0DE),
+              ),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  icon,
+                  color: isSelected ? Colors.white : const Color(0xFF6B6B69),
+                  size: 19,
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected ? Colors.white : const Color(0xFF6B6B69),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
